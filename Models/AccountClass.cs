@@ -1,8 +1,8 @@
 namespace Digibok.Models;
 
 /*
- * Klass för kontoklasshantering i databasen. Kontoklasser används för att gruppera konton i olika kategorier,
- * Exempelvis 12 - Maskiner och inventarier.
+ * Representerar en kontoklass som grupperar bokföringskonton.
+ * Exempelvis 1 - Tillgångar.
 */
 
 public class AccountClass

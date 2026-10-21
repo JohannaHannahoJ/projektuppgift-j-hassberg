@@ -1,8 +1,8 @@
 namespace Digibok.Models;
 
 /*
- * Klass för ett enkilt bokföringskonto i databasen.
- * Exempelvis 1910 - Bankkonto, 3010 - Försäljning varor inom Sverige.
+ * Representerar ett enskilt bokföringskonto.
+ * Exempelvis 1910 - Bankkonto
  */
 
 public class Account
