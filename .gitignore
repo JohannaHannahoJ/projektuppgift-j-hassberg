@@ -1,2 +1,6 @@
 bin/
 obj/
+
+digibok.db
+digibok.db-shm
+digibok.db-wal

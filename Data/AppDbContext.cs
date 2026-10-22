@@ -8,12 +8,19 @@ namespace Digibok.Data;
 */
 public class AppDbContext : DbContext
 {
+    public AppDbContext()
+    {
+    }
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
 
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<AccountClass> AccountClasses => Set<AccountClass>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
+    public DbSet<VoucherRow> VoucherRows => Set<VoucherRow>();
+    public DbSet<VoucherAttachment> VoucherAttachments => Set<VoucherAttachment>();
+
     // Använder SQLite som databas. Om ingen konfiguration har angetts, 
     // används en lokal fil med namnet "digibok.db".
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

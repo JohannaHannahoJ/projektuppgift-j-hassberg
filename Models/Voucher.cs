@@ -14,4 +14,6 @@ public class Voucher
     public string Description { get; set; } = "";
     public bool IsPosted { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<VoucherRow> VoucherRows { get; set; } = [];
+    public List<VoucherAttachment> Attachments { get; set; } = [];
 }
