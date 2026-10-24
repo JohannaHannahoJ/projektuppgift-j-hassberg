@@ -16,7 +16,7 @@ public class AccountImportService
         // Skapa en instans av AppDbContext för att interagera med databasen
         using var db = new AppDbContext();
 
-        if (await db.Accounts.AnyAsync())
+        if (await db.AccountClasses.AnyAsync())
         {
             Console.WriteLine("Kontoplanen finns redan i databasen.");
         }
@@ -68,6 +68,37 @@ public class AccountImportService
             await db.SaveChangesAsync();
 
             Console.WriteLine("Kontoklasserna har sparats i databasen.");
+
+            // Skapa en lista för nya konton
+            var newAccounts = new List<Account>();
+
+            // Skapa konton från CSV-filens rader
+            foreach (var row in accounts)
+            {
+                // Hitta kontoklassen som kontot tillhör
+                var accountClass = accountClasses
+                    .First(c => c.Code == row.ClassCode);
+
+                // Skapa ett nytt konto
+                var account = new Account
+                {
+                    AccountNumber = row.AccountNumber,
+                    Name = row.AccountName,
+                    AccountClassId = accountClass.Id,
+                    IsCustom = false,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Lägg till kontot i listan över nya konton
+                db.Accounts.Add(account);
+            }
+
+            // Spara kontona i databasen
+            db.Accounts.AddRange(newAccounts);
+            await db.SaveChangesAsync();
+
+            Console.WriteLine("Kontona har sparats i databasen.");
 
         }
     }
