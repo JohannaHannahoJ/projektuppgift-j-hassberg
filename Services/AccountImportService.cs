@@ -78,7 +78,7 @@ public class AccountImportService
                         Name = row.AccountName,
                         AccountClassId = accountClass.Id,
                         IsCustom = false,
-                        IsActive = true,
+                        IsActive = false,
                         CreatedAt = DateTime.UtcNow
                     };
 
