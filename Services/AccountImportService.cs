@@ -8,7 +8,6 @@ namespace Digibok.Services;
 * Ansvarar för att hantera importen av kontoplanen från CSV-filen till databasen.
 */
 
-
 public class AccountImportService
 {
     public async Task ImportIfNeededAsync()
@@ -54,51 +53,52 @@ public class AccountImportService
                 })
                 .ToList();
 
-            Console.WriteLine($"Totalt antal inlästa konton: {accounts.Count}");
-
-            Console.WriteLine($"Antal unika kontoklasser: {accountClasses.Count}");
-
-            foreach (var accountClass in accountClasses)
-            {
-                Console.WriteLine($"{accountClass.Code} - {accountClass.Name}");
-            }
-
             // Spara kontoklasserna i databasen
-            db.AccountClasses.AddRange(accountClasses);
-            await db.SaveChangesAsync();
-
-            Console.WriteLine("Kontoklasserna har sparats i databasen.");
-
-            // Skapa en lista för nya konton
-            var newAccounts = new List<Account>();
-
-            // Skapa konton från CSV-filens rader
-            foreach (var row in accounts)
+            await using var transaction =
+                await db.Database.BeginTransactionAsync();
+            try
             {
-                // Hitta kontoklassen som kontot tillhör
-                var accountClass = accountClasses
-                    .First(c => c.Code == row.ClassCode);
+                db.AccountClasses.AddRange(accountClasses);
+                await db.SaveChangesAsync();
 
-                // Skapa ett nytt konto
-                var account = new Account
+                // Skapa en lista för nya konton
+                var newAccounts = new List<Account>();
+
+                // Skapa konton från CSV-filens rader
+                foreach (var row in accounts)
                 {
-                    AccountNumber = row.AccountNumber,
-                    Name = row.AccountName,
-                    AccountClassId = accountClass.Id,
-                    IsCustom = false,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                };
+                    // Hitta kontoklassen som kontot tillhör
+                    var accountClass = accountClasses
+                        .First(c => c.Code == row.ClassCode);
 
-                // Lägg till kontot i listan över nya konton
-                db.Accounts.Add(account);
+                    // Skapa ett nytt konto
+                    var account = new Account
+                    {
+                        AccountNumber = row.AccountNumber,
+                        Name = row.AccountName,
+                        AccountClassId = accountClass.Id,
+                        IsCustom = false,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // Lägg till kontot i listan över nya konton
+                    newAccounts.Add(account);
+                }
+
+                // Spara kontona i databasen
+                db.Accounts.AddRange(newAccounts);
+
+                // invänta bekräftelse på att kontona har sparats i databasen
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                Console.WriteLine("Kontoplanen har importerats till databasen.");
             }
-
-            // Spara kontona i databasen
-            db.Accounts.AddRange(newAccounts);
-            await db.SaveChangesAsync();
-
-            Console.WriteLine("Kontona har sparats i databasen.");
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Ett fel uppstod vid importen: {ex.Message}");
+            }
 
         }
     }
