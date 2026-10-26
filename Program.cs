@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Digibok.Services;
+﻿using Digibok.Services;
 using Digibok.Data;
 
 Console.WriteLine("Välkommen till Digibok - din digitala bokföring!");
@@ -11,8 +10,50 @@ await importer.ImportIfNeededAsync();
 // Skapa en koppling till databasen
 using var db = new AppDbContext();
 
+// Skapa tjänsten som hanterar verifikat
 var voucherService = new VoucherService(db);
 
+// Visa menyn tills användaren väljer att avsluta.
+bool running = true;
+
+while (running)
+{
+    Console.WriteLine();
+    Console.WriteLine("===== DIGIBOK =====");
+    Console.WriteLine("1. Skapa verifikat");
+    Console.WriteLine("2. Visa verifikat");
+    Console.WriteLine("3. Visa kontoplan");
+    Console.WriteLine("4. Avsluta");
+    Console.Write("Välj ett alternativ: ");
+
+    string? choice = Console.ReadLine();
+
+    switch (choice)
+    {
+        case "1":
+            Console.WriteLine("Skapa verifikat");
+            break;
+
+        case "2":
+            Console.WriteLine("Visa verifikat");
+            break;
+
+        case "3":
+            Console.WriteLine("Visa kontoplan");
+            break;
+
+        case "4":
+            running = false;
+            Console.WriteLine("Avslutar Digibok");
+            break;
+
+        default:
+            Console.WriteLine("Ogiltigt val. Försök igen.");
+            break;
+    }
+}
+
+/*
 // Skapa ett testverifikat
 var voucher = await voucherService.CreateVoucherAsync(
     new DateOnly(2026, 10, 26),
@@ -69,7 +110,7 @@ else
 }
 
 // Hämta och visa alla konton från databasen
-/*var accountService = new AccountService(db);
+/* var accountService = new AccountService(db);
 var accounts = await accountService.GetAllAccountsAsync();
 foreach (var account in accounts)
 {
