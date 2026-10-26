@@ -85,8 +85,96 @@ while (running)
             break;
 
         case "2":
-            Console.WriteLine("Visa verifikat");
+            // Undermeny för att visa verifikat
+            bool showVoucherMenu = true;
+
+            while (showVoucherMenu)
+            {
+                Console.WriteLine();
+                Console.WriteLine("===== VISA VERIFIKAT =====");
+                Console.WriteLine("1. Visa alla");
+                Console.WriteLine("2. Visa bokförda");
+                Console.WriteLine("3. Visa utkast");
+                Console.WriteLine("4. Tillbaka");
+                Console.Write("Välj ett alternativ: ");
+
+                string? voucherChoice = Console.ReadLine();
+
+                switch (voucherChoice)
+                {
+                    case "1":
+                        // Hämtar och visar alla verifikat.
+                        var vouchers = await voucherService.GetAllVouchersAsync();
+
+                        if (vouchers.Count == 0)
+                        {
+                            Console.WriteLine("Det finns inga verifikat att visa.");
+                        }
+                        else
+                        {
+                            foreach (var item in vouchers)
+                            {
+                                Console.WriteLine(
+                                    $"Verifikat: {item.VoucherSeries}{item.VoucherNumber}, " +
+                                    $"datum: {item.Date}, beskrivning: {item.Description}");
+                            }
+                        }
+
+                        break;
+
+                    case "2":
+                        // Hämtar verifikat och filtrerar fram de bokförda verifikaten
+                        var postedVouchers = (await voucherService.GetAllVouchersAsync()).Where(v => v.IsPosted).ToList();
+
+                        if (postedVouchers.Count == 0)
+                        {
+                            Console.WriteLine("Det finns inga bokförda verifikat.");
+                        }
+                        else
+                        {
+                            foreach (var item in postedVouchers)
+                            {
+                                Console.WriteLine(
+                                    $"Verifikat: {item.VoucherSeries}{item.VoucherNumber}, " +
+                                    $"datum: {item.Date}, beskrivning: {item.Description}");
+                            }
+                        }
+
+                        break;
+
+                    case "3":
+                        // Hämtar verifikat och filtrerar fram utkasten
+                        var draftVouchers = (await voucherService.GetAllVouchersAsync()).Where(v => !v.IsPosted).ToList();
+
+                        if (draftVouchers.Count == 0)
+                        {
+                            Console.WriteLine("Det finns inga utkast att visa.");
+                        }
+                        else
+                        {
+                            foreach (var item in draftVouchers)
+                            {
+                                Console.WriteLine(
+                                    $"Verifikat: {item.VoucherSeries}{item.VoucherNumber}, " +
+                                    $"datum: {item.Date}, beskrivning: {item.Description}");
+                            }
+                        }
+
+                        break;
+
+                    case "4":
+                    // tillbaka till huvudmeny
+                        showVoucherMenu = false;
+                        break;
+
+                    default:
+                        Console.WriteLine("Ogiltigt val. Försök igen.");
+                        break;
+                }
+            }
+
             break;
+
 
         case "3":
             Console.WriteLine("Visa kontoplan");

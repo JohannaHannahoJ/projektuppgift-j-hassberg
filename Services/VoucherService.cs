@@ -88,4 +88,14 @@ public class VoucherService
         // Verifikatet balanserar om summorna är lika.
         return totalDebit == totalCredit;
     }
+
+    // Hämta verifikaten från databasen
+    public async Task<List<Voucher>> GetAllVouchersAsync()
+    {
+        return await _db.Vouchers
+            .OrderBy(v => v.Date) // Äldsta datum först
+            .ThenBy(v => v.VoucherSeries) // Serie i bokstavsordning
+            .ThenBy(v => v.VoucherNumber) // Nummer i stigande ordning
+            .ToListAsync();
+    }
 }
