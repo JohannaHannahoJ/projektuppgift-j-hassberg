@@ -31,7 +31,57 @@ while (running)
     switch (choice)
     {
         case "1":
-            Console.WriteLine("Skapa verifikat");
+
+            DateOnly date;
+            bool validDate = false;
+
+            // Fortsätter att fråga efter datum tills giltig inmatning
+            do
+            {
+                Console.Write("Bokföringsdatum (ÅÅÅÅ-MM-DD): ");
+                string? dateInput = Console.ReadLine()?.Trim();
+
+                if (DateOnly.TryParseExact(dateInput, "yyyy-MM-dd", out date))
+                {
+                    validDate = true;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltigt datum. Använd formatet åååå-mm-dd.");
+                }
+
+            } while (!validDate);
+
+            char series = 'A';
+            bool validSeries = false;
+
+            // Fortsätter att fråga efter verifikatserie tills giltig inmatning
+            do
+            {
+                Console.Write("Verifikatserie (A-Z): ");
+                string? seriesInput = Console.ReadLine()?.Trim();
+
+                if (seriesInput != null && seriesInput.Trim().Length == 1 && char.IsAsciiLetter(seriesInput[0]))
+                {
+                    series = char.ToUpperInvariant(seriesInput[0]);
+                    validSeries = true;
+                }
+                else
+                {
+                    Console.WriteLine("Ange en bokstav mellan A och Z.");
+                }
+
+            } while (!validSeries);
+
+            // Be om en beskrivning.
+            Console.Write("Beskrivning: ");
+            string? description = (Console.ReadLine() ?? "").Trim();
+
+            // Skapa och spara verifikatet
+            var voucher = await voucherService.CreateVoucherAsync(date, description, series);
+
+            Console.WriteLine($"Verifikat: {voucher.VoucherSeries}{voucher.VoucherNumber}, " + $"datum: {voucher.Date}, beskrivning: {voucher.Description}");
+
             break;
 
         case "2":
@@ -54,15 +104,7 @@ while (running)
 }
 
 /*
-// Skapa ett testverifikat
-var voucher = await voucherService.CreateVoucherAsync(
-    new DateOnly(2026, 10, 26),
-    "Test av verifikat",
-    'A');
 
-Console.WriteLine(
-    $"Skapade verifikat: {voucher.VoucherSeries}{voucher.VoucherNumber}, " +
-    $"datum: {voucher.Date}, beskrivning: {voucher.Description}");
 
 // Hämta ett konto som finns i databasen
 var account = await db.Accounts
