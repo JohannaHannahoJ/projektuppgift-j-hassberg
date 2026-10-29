@@ -22,23 +22,13 @@ public class VoucherService
         string description,
         char voucherSeries)
     {
-        // Hitta det högsta verifikationsnumret för vald serie och år
-        var lastVoucherNumber = await _db.Vouchers
-            .Where(v => v.FiscalYear == date.Year && v.VoucherSeries == voucherSeries)
-            .Select(v => (int?)v.VoucherNumber)
-            .MaxAsync();
-
-        // Nästa nummer blir 1 om serien saknar verifikat,
-        // annars det högsta numret plus 1.
-        var nextVoucherNumber = (lastVoucherNumber ?? 0) + 1;
-
         var voucher = new Voucher
         {
             Date = date,
             Description = description,
             FiscalYear = date.Year,
             VoucherSeries = voucherSeries,
-            VoucherNumber = nextVoucherNumber,
+            VoucherNumber = null,
             IsPosted = false,
             CreatedAt = DateTime.UtcNow
         };

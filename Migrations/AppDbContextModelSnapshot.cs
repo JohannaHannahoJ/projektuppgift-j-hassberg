@@ -93,7 +93,7 @@ namespace projektuppgift_j_hassberg.Migrations
                     b.Property<bool>("IsPosted")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("VoucherNumber")
+                    b.Property<int?>("VoucherNumber")
                         .HasColumnType("INTEGER");
 
                     b.Property<char>("VoucherSeries")
