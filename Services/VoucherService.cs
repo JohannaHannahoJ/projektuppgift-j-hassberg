@@ -46,6 +46,33 @@ public class VoucherService
         decimal debit,
         decimal credit)
     {
+        // En rad får inte ha belopp på både debet och kredit.
+        if (debit > 0 && credit > 0)
+        {
+            throw new ArgumentException("En rad kan inte ha både debet och kredit.");
+        }
+
+        // Debet och kredit får inte vara negativa.
+        if (debit < 0 || credit < 0)
+        {
+            throw new ArgumentException("Belopp kan inte vara negativa. Ange noll eller mer.");
+        }
+
+        // En bokföringsrad måste ha ett belopp.
+        if (debit == 0 && credit == 0)
+        {
+            throw new ArgumentException("Ange ett belopp på antingen debet eller kredit.");
+        }
+
+        // Kontrollera att verifikatet finns
+        var voucherExists = await _db.Vouchers
+            .AnyAsync(v => v.Id == voucherId);
+
+        if (!voucherExists)
+        {
+            throw new ArgumentException("Verifikatet finns inte.");
+        }
+        
         var row = new VoucherRow
         {
             VoucherId = voucherId,
@@ -69,10 +96,16 @@ public class VoucherService
             .Where(row => row.VoucherId == voucherId)
             .ToListAsync();
 
-        // Summera alla debetbelopp.
+        // Kolla att verifikatet har minst två bokföringsrader
+        if (rows.Count < 2)
+        {
+            return false;
+        }
+
+        // Summera alla debetbelopp
         var totalDebit = rows.Sum(row => row.Debit);
 
-        // Summera alla kreditbelopp.
+        // Summera alla kreditbelopp
         var totalCredit = rows.Sum(row => row.Credit);
 
         // Verifikatet balanserar om summorna är lika.

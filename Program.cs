@@ -12,6 +12,8 @@ using var db = new AppDbContext();
 
 // Skapa tjänsten som hanterar verifikat
 var voucherService = new VoucherService(db);
+// Skapa tjänsten som hanterar konton
+var accountService = new AccountService(db);
 
 // Visa menyn tills användaren väljer att avsluta.
 bool running = true;
@@ -81,6 +83,55 @@ while (running)
             var voucher = await voucherService.CreateVoucherAsync(date, description, series);
 
             Console.WriteLine($"Verifikat: {voucher.VoucherSeries}{voucher.VoucherNumber}, " + $"datum: {voucher.Date}, beskrivning: {voucher.Description}");
+
+            // Frågar användaren om en bokföringsrad ska läggas till. Kontrollerar att svaret är j eller n
+            string? answer;
+            do
+            {
+                Console.Write("Vill du lägga till en bokföringsrad? (j/n): ");
+                answer = Console.ReadLine()?.Trim().ToLower();
+
+                if (answer != "j" && answer != "n")
+                {
+                    Console.WriteLine("Ogiltigt svar. Ange j eller n.");
+                }
+
+            } while (answer != "j" && answer != "n");
+
+            if (answer == "j")
+            {
+                // Ber användaren ange ett kontonummer. Kontrollerar att inmatningen är ett positivt heltal
+                int accountNumber;
+                bool validAccountNumber = false;
+
+                do
+                {
+                    Console.Write("Ange kontonummer: ");
+                    string? input = Console.ReadLine()?.Trim();
+
+                    if (int.TryParse(input, out accountNumber) && accountNumber > 0)
+                    {
+                        validAccountNumber = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ogiltigt kontonummer. Ange ett positivt heltal.");
+                    }
+
+                } while (!validAccountNumber);
+
+                // Söker efter kontot i databasen med hjälp av kontonumret
+                var account = await accountService.GetAccountByNumberAsync(accountNumber);
+
+                if (account == null)
+                {
+                    Console.WriteLine("Kontot finns inte i kontoplanen.");
+                }
+                else
+                {
+                    Console.WriteLine($"Hittade konto: {account.AccountNumber} - {account.Name}");
+                }
+            }
 
             break;
 
@@ -163,7 +214,7 @@ while (running)
                         break;
 
                     case "4":
-                    // tillbaka till huvudmeny
+                        // tillbaka till huvudmeny
                         showVoucherMenu = false;
                         break;
 
@@ -175,9 +226,24 @@ while (running)
 
             break;
 
-
         case "3":
-            Console.WriteLine("Visa kontoplan");
+            // Hämtar och visar endast aktiva konton.
+            var activeAccounts = await accountService.GetActiveAccountsAsync();
+
+            if (activeAccounts.Count == 0)
+            {
+                Console.WriteLine("Det finns inga konton i din kontoplan.");
+            }
+            else
+            {
+                Console.WriteLine("===== KONTOPLAN =====");
+
+                foreach (var account in activeAccounts)
+                {
+                    Console.WriteLine($"{account.AccountNumber} - {account.Name}");
+                }
+            }
+
             break;
 
         case "4":
@@ -237,13 +303,5 @@ if (isBalanced)
 else
 {
     Console.WriteLine("Verifikatet balanserar inte");
-}
-
-// Hämta och visa alla konton från databasen
-/* var accountService = new AccountService(db);
-var accounts = await accountService.GetAllAccountsAsync();
-foreach (var account in accounts)
-{
-    Console.WriteLine($"Konto: {account.AccountNumber} - {account.Name}");
 }
 */
