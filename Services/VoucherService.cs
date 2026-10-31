@@ -72,7 +72,7 @@ public class VoucherService
         {
             throw new ArgumentException("Verifikatet finns inte.");
         }
-        
+
         var row = new VoucherRow
         {
             VoucherId = voucherId,
@@ -120,5 +120,72 @@ public class VoucherService
             .ThenBy(v => v.VoucherSeries) // Serie i bokstavsordning
             .ThenBy(v => v.VoucherNumber) // Nummer i stigande ordning
             .ToListAsync();
+    }
+
+    // Hämtar alla bokföringsrader för ett verifikat.
+    public async Task<List<VoucherRow>> GetVoucherRowsAsync(int voucherId)
+    {
+        return await _db.VoucherRows
+            .Include(row => row.Account)
+            .Where(row => row.VoucherId == voucherId)
+            .ToListAsync();
+    }
+
+    // Bokför verifiakt om det balanserar
+    public async Task PostVoucherAsync(int voucherId)
+    {
+        // Hämtar verifikatet och dess bokföringsrader samt konton.
+        var voucher = await _db.Vouchers
+            .Include(v => v.VoucherRows)
+            .ThenInclude(row => row.Account)
+            .FirstOrDefaultAsync(v => v.Id == voucherId);
+
+        if (voucher == null)
+        {
+            throw new ArgumentException("Verifikatet finns inte.");
+        }
+
+        if (voucher.IsPosted)
+        {
+            throw new InvalidOperationException("Verifikatet är redan bokfört.");
+        }
+
+        // Kontrollerar att verifikatet balanserar.
+        if (voucher.VoucherRows.Count < 2)
+        {
+            throw new InvalidOperationException(
+                "Verifikatet måste ha minst två bokföringsrader.");
+        }
+
+        decimal totalDebit = voucher.VoucherRows.Sum(row => row.Debit);
+        decimal totalCredit = voucher.VoucherRows.Sum(row => row.Credit);
+
+        if (totalDebit != totalCredit)
+        {
+            throw new InvalidOperationException(
+                "Verifikatet balanserar inte och kan därför inte bokföras.");
+        }
+
+        // Hämtar senaste verifikatnumret för samma år och serie.
+        int lastNumber = await _db.Vouchers
+            .Where(v => v.FiscalYear == voucher.FiscalYear
+                        && v.VoucherSeries == voucher.VoucherSeries
+                        && v.IsPosted
+                        && v.VoucherNumber.HasValue)
+            .MaxAsync(v => (int?)v.VoucherNumber) ?? 0;
+
+        // Tilldelar nästa nummer.
+        voucher.VoucherNumber = lastNumber + 1;
+
+        // Markerar verifikatet som bokfört.
+        voucher.IsPosted = true;
+
+        // Aktiverar alla konton som används i verifikatet.
+        foreach (var row in voucher.VoucherRows)
+        {
+            row.Account.IsActive = true;
+        }
+
+        await _db.SaveChangesAsync();
     }
 }
