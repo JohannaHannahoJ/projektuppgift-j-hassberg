@@ -452,11 +452,86 @@ while (running)
                         }
                         else
                         {
+                            Console.WriteLine("===== UTKAST =====");
+
                             foreach (var item in draftVouchers)
                             {
                                 Console.WriteLine(
-                                    $"Verifikat: {item.VoucherSeries}{item.VoucherNumber}, " +
+                                    $"ID: {item.Id}, Verifikat: {item.VoucherSeries}, " +
                                     $"datum: {item.Date}, beskrivning: {item.Description}");
+                            }
+
+                            Console.Write("Ange ID på utkastet du vill öppna (0 för tillbaka): ");
+
+                            if (int.TryParse(Console.ReadLine(), out int draftId) && draftId != 0)
+                            {
+                                var draft = await voucherService.GetVoucherByIdAsync(draftId);
+
+                                if (draft == null || draft.IsPosted)
+                                {
+                                    Console.WriteLine("Utkastet kunde inte hittas.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine();
+                                    Console.WriteLine("===== ÖPPNAT UTKAST =====");
+                                    Console.WriteLine($"Datum: {draft.Date}");
+                                    Console.WriteLine($"Beskrivning: {draft.Description}");
+
+                                    var rows = draft.VoucherRows;
+
+                                    foreach (var row in rows)
+                                    {
+                                        Console.WriteLine(
+                                            $"{row.Account.AccountNumber} - {row.Account.Name} " +
+                                            $"Debet: {row.Debit:N2} Kredit: {row.Credit:N2}");
+                                    }
+
+                                    // Meny för det öppnade utkastet.
+                                    Console.WriteLine();
+                                    Console.WriteLine("===== HANTERA UTKAST =====");
+                                    Console.WriteLine("1. Radera utkast");
+                                    Console.WriteLine("2. Tillbaka");
+                                    Console.Write("Välj ett alternativ: ");
+
+                                    string? draftChoice = Console.ReadLine();
+
+                                    switch (draftChoice)
+                                    {
+                                        case "1":
+                                            string? deleteChoice;
+
+                                            do
+                                            {
+                                                Console.Write("Är du säker på att du vill radera utkastet? (j/n): ");
+                                                deleteChoice = Console.ReadLine()?.Trim().ToLower();
+
+                                                if (deleteChoice != "j" && deleteChoice != "n")
+                                                {
+                                                    Console.WriteLine("Ogiltigt svar. Ange j eller n.");
+                                                }
+
+                                            } while (deleteChoice != "j" && deleteChoice != "n");
+
+                                            if (deleteChoice == "j")
+                                            {
+                                                await voucherService.DeleteDraftAsync(draft.Id);
+                                                Console.WriteLine("Utkastet har raderats.");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Utkastet har inte raderats.");
+                                            }
+                                            break;
+
+                                        case "2":
+                                            break;
+
+                                        default:
+                                            Console.WriteLine("Ogiltigt val.");
+                                            break;
+                                    }
+                                }
                             }
                         }
 

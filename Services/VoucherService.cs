@@ -64,13 +64,18 @@ public class VoucherService
             throw new ArgumentException("Ange ett belopp på antingen debet eller kredit.");
         }
 
-        // Kontrollera att verifikatet finns
-        var voucherExists = await _db.Vouchers
-            .AnyAsync(v => v.Id == voucherId);
+        // Kontrollera att verifikatet finns och inte redan är bokfört.
+        var voucher = await _db.Vouchers
+            .FirstOrDefaultAsync(v => v.Id == voucherId);
 
-        if (!voucherExists)
+        if (voucher == null)
         {
             throw new ArgumentException("Verifikatet finns inte.");
+        }
+
+        if (voucher.IsPosted)
+        {
+            throw new InvalidOperationException("Det går inte att ändra ett bokfört verifikat.");
         }
 
         var row = new VoucherRow
@@ -120,6 +125,36 @@ public class VoucherService
             .ThenBy(v => v.VoucherSeries) // Serie i bokstavsordning
             .ThenBy(v => v.VoucherNumber) // Nummer i stigande ordning
             .ToListAsync();
+    }
+
+    // Hämtar ett verifikat-utkast
+    public async Task<Voucher?> GetVoucherByIdAsync(int voucherId)
+    {
+        return await _db.Vouchers
+            .Include(v => v.VoucherRows)
+            .ThenInclude(row => row.Account)
+            .FirstOrDefaultAsync(v => v.Id == voucherId);
+    }
+
+    // Raderar ett utkast.
+    public async Task DeleteDraftAsync(int voucherId)
+    {
+        var voucher = await _db.Vouchers
+            .FirstOrDefaultAsync(v => v.Id == voucherId);
+
+        if (voucher == null)
+        {
+            throw new ArgumentException("Verifikatet finns inte.");
+        }
+
+        if (voucher.IsPosted)
+        {
+            throw new InvalidOperationException(
+                "Ett bokfört verifikat kan inte raderas.");
+        }
+
+        _db.Vouchers.Remove(voucher);
+        await _db.SaveChangesAsync();
     }
 
     // Hämtar alla bokföringsrader för ett verifikat.
